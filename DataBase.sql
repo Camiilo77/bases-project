@@ -1,5 +1,8 @@
-create database restaurante_db;
-USE proyecto_final_restaurante;
+-- Active: 1763383379667@@127.0.0.1@3306@base_datos
+-- Active: 1763383379667@@127.0.0.1@3306@base_datos
+
+create database  Proyecto_Restaurante;  
+USE Proyecto_Restaurante;
 
 
 CREATE TABLE CategoriaPlato (
@@ -80,7 +83,7 @@ CREATE TABLE Pedido (
   FOREIGN KEY (id_mesero) REFERENCES Mesero(id_mesero)
 );
 
-
+CREATE TABLE DetallePedido (
   id_detalle INT PRIMARY KEY AUTO_INCREMENT,
   id_pedido INT NOT NULL,
   id_plato INT NOT NULL,
@@ -102,7 +105,7 @@ CREATE TABLE Pago (
   FOREIGN KEY (id_pedido) REFERENCES Pedido(id_pedido)
 );
 
-CREATE TABLE MeseroPedido (
+CREATE TABLE Mesero_Pedido (
   id_mesero INT NOT NULL,
   id_pedido INT NOT NULL,
   rol VARCHAR(50) NOT NULL DEFAULT 'Asistente',
@@ -111,4 +114,14 @@ CREATE TABLE MeseroPedido (
   FOREIGN KEY (id_pedido) REFERENCES Pedido(id_pedido)
 );
 
-SELCET *FROM  Pedido;
+SELECT * FROM meseropedido;
+SELECT * FROM turno;
+SELECT codigo_pago FROM Pago;
+
+SELECT COUNT(*) FROM Pago;
+SELECT codigo_pago FROM Pago;
+
+
+drop database Proyecto_Restaurante;
+delete * from   plato;
+

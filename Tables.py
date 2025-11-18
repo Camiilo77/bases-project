@@ -5,7 +5,7 @@ DB_CONFIG = {
     "host": "localhost",
     "user": "root",
     "password": "nosferatu06",
-    "database": "restaurante_db"
+    "database": "Proyecto_Restaurante"
 }
 
 def crear_conexion_inicial():
@@ -268,3 +268,26 @@ def create_table_pago(connection):
             print("Tabla Pago creada exitosamente")
     except Error as err:
         print(f"Error al crear Pago: {err}")
+
+
+def create_table_mesero_pedido(connection):
+    try:
+        cursor = connection.cursor()
+        cursor.execute("SHOW TABLES LIKE 'MeseroPedido'")
+        existe = cursor.fetchone()
+        if existe:
+            print("La tabla Pago ya existe")
+        else:
+         cursor.execute('''
+            CREATE TABLE IF NOT EXISTS MeseroPedido (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                id_mesero INT NOT NULL,
+                id_pedido INT NOT NULL,
+                rol VARCHAR(50),
+                FOREIGN KEY (id_mesero) REFERENCES mesero(id_mesero),
+                FOREIGN KEY (id_pedido) REFERENCES pedido(id_pedido)
+            )
+        ''')
+    except Error as err:
+        print(f"Error al crear mesero_pedido: {err}")
+    
