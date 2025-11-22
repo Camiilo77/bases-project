@@ -1,11 +1,11 @@
-# consultas 
+# ARCHIVO DE CONSULTAS SQL - 30 QUERIES
 from Tables import conectar_bd
 
 def ejecutar_query(conn, query, descripcion):
     """Función auxiliar para ejecutar y mostrar resultados"""
-    print(f"\n{':p'*80}")
-    print(f" {descripcion}")
-    print(f"{':p'*80}")
+    print(f"\n{'='*80}")
+    print(f"📊 {descripcion}")
+    print(f"{'='*80}")
     try:
         cursor = conn.cursor()
         cursor.execute(query)
@@ -14,72 +14,85 @@ def ejecutar_query(conn, query, descripcion):
         if resultados:
             columnas = [i[0] for i in cursor.description]
             print(f"\n{' | '.join(columnas)}")
-            print("-" * 80)
+            print("-" * 120)
             
-            for fila in resultados:
+            for fila in resultados[:20]:  # Mostrar máximo 20 filas
                 print(f"{' | '.join(str(x) for x in fila)}")
-            print(f"\nTotal de registros: {len(resultados)}")
+            
+            if len(resultados) > 20:
+                print(f"\n... {len(resultados) - 20} filas más ...")
+            print(f"\n✅ Total de registros: {len(resultados)}")
         else:
-            print("No hay resultados")
+            print("⚠️ No hay resultados")
     except Exception as e:
         print(f"❌ Error: {e}")
+    finally:
+        cursor.close()
 
-# ... QUERIES ORIGINALES (1-15) ...
-def query_1_ingresos_por_mesero(conn):
-    query = """
-    SELECT 
-        m.codigo_mesero,
-        m.nombre,
-        COUNT(DISTINCT p.id_pedido) as total_pedidos,
-        SUM(pa.monto) as ingresos_totales,
-        ROUND(AVG(pa.monto), 2) as promedio_pedido
-    FROM Mesero m
-    LEFT JOIN Pedido p ON m.id_mesero = p.id_mesero
-    LEFT JOIN Pago pa ON p.id_pedido = pa.id_pedido
-    GROUP BY m.id_mesero, m.codigo_mesero, m.nombre
-    ORDER BY ingresos_totales DESC
-    LIMIT 20;
-    """
-    ejecutar_query(conn, query, "QUERY 1: Ingresos por Mesero")
+# ========== QUERIES 1-10: ANÁLISIS GENERAL ==========
 
-def query_2_platos_mas_vendidos(conn):
+def query_1_top_platos_vendidos(conn):
+    """Top 10 platos más vendidos con ingresos"""
     query = """
     SELECT 
         p.codigo_plato,
         p.nombre,
         c.nombre as categoria,
-        SUM(dp.cantidad) as total_vendido,
-        COUNT(DISTINCT dp.id_pedido) as num_pedidos,
-        ROUND(AVG(dp.precio_unitario), 2) as precio_promedio,
+        p.precio,
+        COUNT(dp.id_detalle) as veces_pedido,
+        SUM(dp.cantidad) as unidades_vendidas,
         ROUND(SUM(dp.cantidad * dp.precio_unitario), 2) as ingresos_totales
     FROM Plato p
     INNER JOIN CategoriaPlato c ON p.id_categoria = c.id_categoria
     LEFT JOIN DetallePedido dp ON p.id_plato = dp.id_plato
-    GROUP BY p.id_plato, p.codigo_plato, p.nombre, c.nombre
-    ORDER BY total_vendido DESC
-    LIMIT 15;
+    GROUP BY p.id_plato, p.codigo_plato, p.nombre, c.nombre, p.precio
+    ORDER BY unidades_vendidas DESC
+    LIMIT 10;
     """
-    ejecutar_query(conn, query, "QUERY 2: Top 15 Platos Más Vendidos")
+    ejecutar_query(conn, query, "QUERY 1: Top 10 Platos Más Vendidos")
 
-def query_3_ocupacion_mesas(conn):
+def query_2_ingresos_por_categoria(conn):
+    """Ingresos totales por categoría de platos"""
     query = """
     SELECT 
-        m.codigo_mesa,
-        m.capacidad,
-        COUNT(DISTINCT r.id_reserva) as num_reservas,
-        ROUND(COUNT(DISTINCT r.id_reserva) / 40 * 100, 2) as porcentaje_uso,
-        SUM(CASE WHEN r.estado = 'confirmada' THEN 1 ELSE 0 END) as confirmadas,
-        SUM(CASE WHEN r.estado = 'cancelada' THEN 1 ELSE 0 END) as canceladas,
-        SUM(CASE WHEN r.estado = 'pendiente' THEN 1 ELSE 0 END) as pendientes
-    FROM Mesa m
-    LEFT JOIN Reserva r ON m.id_mesa = r.id_mesa
-    GROUP BY m.id_mesa, m.codigo_mesa, m.capacidad
-    ORDER BY num_reservas DESC
-    LIMIT 20;
+        c.codigo_categoria,
+        c.nombre as categoria,
+        COUNT(DISTINCT p.id_plato) as num_platos,
+        COUNT(dp.id_detalle) as veces_pedido,
+        SUM(dp.cantidad) as unidades_vendidas,
+        ROUND(SUM(dp.cantidad * dp.precio_unitario), 2) as ingresos_totales,
+        ROUND(AVG(dp.precio_unitario), 2) as precio_promedio
+    FROM CategoriaPlato c
+    INNER JOIN Plato p ON c.id_categoria = p.id_categoria
+    LEFT JOIN DetallePedido dp ON p.id_plato = dp.id_plato
+    GROUP BY c.id_categoria, c.codigo_categoria, c.nombre
+    ORDER BY ingresos_totales DESC;
     """
-    ejecutar_query(conn, query, "QUERY 3: Ocupación de Mesas")
+    ejecutar_query(conn, query, "QUERY 2: Ingresos por Categoría")
+
+def query_3_meseros_top_desempenio(conn):
+    """Meseros con mejor desempeño (más pedidos e ingresos)"""
+    query = """
+    SELECT 
+        m.codigo_mesero,
+        m.nombre,
+        m.telefono,
+        COUNT(DISTINCT p.id_pedido) as total_pedidos,
+        SUM(p.total) as ingresos_generados,
+        ROUND(AVG(p.total), 2) as ticket_promedio,
+        COUNT(DISTINCT mp.id) as asignaciones
+    FROM Mesero m
+    LEFT JOIN Pedido p ON m.id_mesero = p.id_mesero
+    LEFT JOIN MeseroPedido mp ON m.id_mesero = mp.id_mesero
+    GROUP BY m.id_mesero, m.codigo_mesero, m.nombre, m.telefono
+    HAVING total_pedidos > 0
+    ORDER BY ingresos_generados DESC
+    LIMIT 15;
+    """
+    ejecutar_query(conn, query, "QUERY 3: Top 15 Meseros por Desempeño")
 
 def query_4_clientes_frecuentes(conn):
+    """Clientes más frecuentes y su gasto total"""
     query = """
     SELECT 
         c.codigo_cliente,
@@ -89,59 +102,60 @@ def query_4_clientes_frecuentes(conn):
         COUNT(DISTINCT r.id_reserva) as num_reservas,
         COUNT(DISTINCT p.id_pedido) as num_pedidos,
         ROUND(SUM(pa.monto), 2) as gasto_total,
-        ROUND(AVG(pa.monto), 2) as gasto_promedio,
-        MAX(pa.fecha_pago) as ultima_visita
+        ROUND(AVG(pa.monto), 2) as gasto_promedio
     FROM Cliente c
-    LEFT JOIN Reserva r ON c.id_cliente = r.id_cliente
+    INNER JOIN Reserva r ON c.id_cliente = r.id_cliente
     LEFT JOIN Pedido p ON r.id_reserva = p.id_reserva
     LEFT JOIN Pago pa ON p.id_pedido = pa.id_pedido
     GROUP BY c.id_cliente, c.codigo_cliente, c.nombre, c.telefono, c.correo
-    HAVING COUNT(DISTINCT r.id_reserva) > 0
     ORDER BY gasto_total DESC
     LIMIT 15;
     """
-    ejecutar_query(conn, query, "QUERY 4: Clientes Más Frecuentes")
+    ejecutar_query(conn, query, "QUERY 4: Top 15 Clientes Frecuentes")
 
-def query_5_categorias_mas_vendidas(conn):
+def query_5_ocupacion_mesas(conn):
+    """Análisis de ocupación de mesas"""
     query = """
     SELECT 
-        c.codigo_categoria,
-        c.nombre as categoria,
-        COUNT(DISTINCT p.id_plato) as num_platos,
-        SUM(dp.cantidad) as total_items_vendidos,
-        ROUND(SUM(dp.cantidad * dp.precio_unitario), 2) as ingresos_categoria,
-        ROUND(AVG(dp.cantidad), 2) as promedio_items_pedido,
-        COUNT(DISTINCT dp.id_pedido) as num_pedidos
-    FROM CategoriaPlato c
-    LEFT JOIN Plato p ON c.id_categoria = p.id_categoria
-    LEFT JOIN DetallePedido dp ON p.id_plato = dp.id_plato
-    GROUP BY c.id_categoria, c.codigo_categoria, c.nombre
-    ORDER BY ingresos_categoria DESC;
+        m.codigo_mesa,
+        m.capacidad,
+        m.ubicacion,
+        m.estado,
+        COUNT(DISTINCT r.id_reserva) as num_reservas,
+        COUNT(DISTINCT p.id_pedido) as num_pedidos,
+        ROUND(SUM(p.total), 2) as ingresos_generados
+    FROM Mesa m
+    LEFT JOIN Reserva r ON m.id_mesa = r.id_mesa
+    LEFT JOIN Pedido p ON r.id_reserva = p.id_reserva
+    GROUP BY m.id_mesa, m.codigo_mesa, m.capacidad, m.ubicacion, m.estado
+    ORDER BY ingresos_generados DESC
+    LIMIT 20;
     """
-    ejecutar_query(conn, query, "QUERY 5: Categorías Más Vendidas")
+    ejecutar_query(conn, query, "QUERY 5: Análisis de Ocupación de Mesas")
 
 def query_6_analisis_turnos(conn):
+    """Análisis de turnos: reservas y pedidos por turno"""
     query = """
     SELECT 
         t.codigo_turno,
-        DATE(t.fecha) as fecha,
-        TIME_FORMAT(t.hora_inicio, '%H:%i') as hora_inicio,
-        TIME_FORMAT(t.hora_fin, '%H:%i') as hora_fin,
-        COUNT(DISTINCT p.id_pedido) as num_pedidos,
+        t.fecha,
+        t.hora_inicio,
+        t.hora_fin,
         COUNT(DISTINCT r.id_reserva) as num_reservas,
-        ROUND(SUM(pa.monto), 2) as ingresos,
-        ROUND(AVG(pa.monto), 2) as promedio_pedido
+        COUNT(DISTINCT p.id_pedido) as num_pedidos,
+        ROUND(SUM(p.total), 2) as ingresos_turno,
+        ROUND(AVG(p.total), 2) as ticket_promedio
     FROM Turno t
     LEFT JOIN Reserva r ON t.id_turno = r.id_turno
     LEFT JOIN Pedido p ON r.id_reserva = p.id_reserva
-    LEFT JOIN Pago pa ON p.id_pedido = pa.id_pedido
-    GROUP BY t.id_turno, t.codigo_turno, DATE(t.fecha), t.hora_inicio, t.hora_fin
+    GROUP BY t.id_turno, t.codigo_turno, t.fecha, t.hora_inicio, t.hora_fin
     ORDER BY t.fecha DESC, t.hora_inicio
     LIMIT 20;
     """
     ejecutar_query(conn, query, "QUERY 6: Análisis de Turnos")
 
-def query_7_metodos_pago(conn):
+def query_7_metodos_pago_distribucion(conn):
+    """Distribución de métodos de pago y montos"""
     query = """
     SELECT 
         metodo,
@@ -150,248 +164,108 @@ def query_7_metodos_pago(conn):
         ROUND(AVG(monto), 2) as promedio_transaccion,
         ROUND(MIN(monto), 2) as monto_minimo,
         ROUND(MAX(monto), 2) as monto_maximo,
-        ROUND(SUM(monto) / (SELECT SUM(monto) FROM Pago) * 100, 2) as porcentaje_total
+        ROUND((SUM(monto) / (SELECT SUM(monto) FROM Pago)) * 100, 2) as porcentaje_total
     FROM Pago
     GROUP BY metodo
     ORDER BY monto_total DESC;
     """
-    ejecutar_query(conn, query, "QUERY 7: Análisis de Métodos de Pago")
+    ejecutar_query(conn, query, "QUERY 7: Distribución de Métodos de Pago")
 
-def query_8_estado_pedidos(conn):
+def query_8_estados_pedidos(conn):
+    """Distribución de pedidos por estado"""
     query = """
     SELECT 
         estado,
-        COUNT(*) as cantidad,
-        ROUND(COUNT(*) / (SELECT COUNT(*) FROM Pedido) * 100, 2) as porcentaje,
-        ROUND(AVG(
-            (SELECT SUM(dp.cantidad * dp.precio_unitario) 
-             FROM DetallePedido dp 
-             WHERE dp.id_pedido = Pedido.id_pedido)
-        ), 2) as monto_promedio
+        COUNT(*) as cantidad_pedidos,
+        ROUND((COUNT(*) / (SELECT COUNT(*) FROM Pedido)) * 100, 2) as porcentaje,
+        ROUND(SUM(total), 2) as monto_total,
+        ROUND(AVG(total), 2) as monto_promedio
     FROM Pedido
     GROUP BY estado
-    ORDER BY cantidad DESC;
+    ORDER BY cantidad_pedidos DESC;
     """
     ejecutar_query(conn, query, "QUERY 8: Distribución de Estados de Pedidos")
 
 def query_9_reservas_por_estado(conn):
+    """Distribución de reservas por estado"""
     query = """
     SELECT 
         estado,
         COUNT(*) as total_reservas,
-        ROUND(COUNT(*) / (SELECT COUNT(*) FROM Reserva) * 100, 2) as porcentaje,
-        DATE(MIN(fecha_reserva)) as fecha_primera,
-        DATE(MAX(fecha_reserva)) as fecha_ultima,
+        ROUND((COUNT(*) / (SELECT COUNT(*) FROM Reserva)) * 100, 2) as porcentaje,
+        MIN(fecha_reserva) as fecha_primera,
+        MAX(fecha_reserva) as fecha_ultima,
         COUNT(DISTINCT id_cliente) as clientes_unicos
     FROM Reserva
     GROUP BY estado
     ORDER BY total_reservas DESC;
     """
-    ejecutar_query(conn, query, "QUERY 9: Análisis de Reservas por Estado")
+    ejecutar_query(conn, query, "QUERY 9: Distribución de Reservas por Estado")
 
-def query_10_meseros_jerarquia(conn):
+def query_10_jerarquia_meseros(conn):
+    """Estructura jerárquica de meseros con su desempeño"""
     query = """
     SELECT 
-        m.id_mesero,
         m.codigo_mesero,
         m.nombre as mesero,
-        COALESCE(jefe.nombre, 'SIN JEFE (Jefe Principal)') as jefe,
+        COALESCE(jefe.nombre, 'JEFE PRINCIPAL') as jefe,
+        m.activo,
         COUNT(DISTINCT p.id_pedido) as pedidos_atendidos,
-        ROUND(SUM(pa.monto), 2) as ingresos_generados
+        ROUND(SUM(p.total), 2) as ingresos_generados
     FROM Mesero m
     LEFT JOIN Mesero jefe ON m.id_jefe = jefe.id_mesero
     LEFT JOIN Pedido p ON m.id_mesero = p.id_mesero
-    LEFT JOIN Pago pa ON p.id_pedido = pa.id_pedido
-    GROUP BY m.id_mesero, m.codigo_mesero, m.nombre, jefe.nombre
-    ORDER BY jefe, m.nombre
+    GROUP BY m.id_mesero, m.codigo_mesero, m.nombre, jefe.nombre, m.activo
+    ORDER BY m.id_jefe IS NULL DESC, jefe.nombre, ingresos_generados DESC
     LIMIT 30;
     """
-    ejecutar_query(conn, query, "QUERY 10: Estructura Jerárquica de Meseros")
+    ejecutar_query(conn, query, "QUERY 10: Jerarquía de Meseros y Desempeño")
 
-def query_11_ingresos_diarios(conn):
-    query = """
-    SELECT 
-        DATE(pa.fecha_pago) as fecha,
-        COUNT(DISTINCT pa.id_pago) as num_transacciones,
-        COUNT(DISTINCT p.id_pedido) as num_pedidos,
-        ROUND(SUM(pa.monto), 2) as ingresos_diarios,
-        ROUND(AVG(pa.monto), 2) as ticket_promedio,
-        ROUND(MIN(pa.monto), 2) as venta_minima,
-        ROUND(MAX(pa.monto), 2) as venta_maxima
-    FROM Pago pa
-    LEFT JOIN Pedido p ON pa.id_pedido = p.id_pedido
-    GROUP BY DATE(pa.fecha_pago)
-    ORDER BY fecha DESC;
-    """
-    ejecutar_query(conn, query, "QUERY 11: Ingresos Diarios")
+# ========== QUERIES 11-20: ANÁLISIS CON WHERE ==========
 
-def query_12_platos_por_pedido(conn):
-    query = """
-    SELECT 
-        p.codigo_pedido,
-        p.fecha_pedido,
-        c.nombre as cliente,
-        m.nombre as mesero,
-        COUNT(DISTINCT dp.id_plato) as num_platos_diferentes,
-        SUM(dp.cantidad) as cantidad_total_items,
-        ROUND(SUM(dp.cantidad * dp.precio_unitario), 2) as total_pedido,
-        p.estado
-    FROM Pedido p
-    INNER JOIN Reserva r ON p.id_reserva = r.id_reserva
-    INNER JOIN Cliente c ON r.id_cliente = c.id_cliente
-    INNER JOIN Mesero m ON p.id_mesero = m.id_mesero
-    LEFT JOIN DetallePedido dp ON p.id_pedido = dp.id_pedido
-    GROUP BY p.id_pedido, p.codigo_pedido, p.fecha_pedido, c.nombre, m.nombre, p.estado
-    ORDER BY total_pedido DESC
-    LIMIT 20;
-    """
-    ejecutar_query(conn, query, "QUERY 12: Detalles de Pedidos (Top 20)")
-
-def query_13_capacidad_mesas_optimizacion(conn):
-    query = """
-    SELECT 
-        CASE 
-            WHEN m.capacidad <= 2 THEN 'Pequeña (2 personas)'
-            WHEN m.capacidad <= 4 THEN 'Mediana (4 personas)'
-            WHEN m.capacidad <= 6 THEN 'Grande (6 personas)'
-            ELSE 'Muy Grande (8+ personas)'
-        END as tipo_mesa,
-        COUNT(DISTINCT m.id_mesa) as num_mesas,
-        COUNT(DISTINCT r.id_reserva) as total_reservas,
-        ROUND(AVG(m.capacidad), 0) as capacidad_promedio,
-        SUM(CASE WHEN r.estado = 'confirmada' THEN 1 ELSE 0 END) as reservas_confirmadas,
-        ROUND(SUM(CASE WHEN r.estado = 'confirmada' THEN 1 ELSE 0 END) / COUNT(DISTINCT r.id_reserva) * 100, 2) as tasa_confirmacion
-    FROM Mesa m
-    LEFT JOIN Reserva r ON m.id_mesa = r.id_mesa
-    GROUP BY tipo_mesa
-    ORDER BY capacidad_promedio;
-    """
-    ejecutar_query(conn, query, "QUERY 13: Optimización de Capacidad de Mesas")
-
-def query_14_comparativa_turnos(conn):
-    query = """
-    SELECT 
-        CASE 
-            WHEN HOUR(t.hora_inicio) < 12 THEN 'MAÑANA'
-            WHEN HOUR(t.hora_inicio) < 18 THEN 'TARDE'
-            ELSE 'NOCHE'
-        END as turno,
-        COUNT(DISTINCT r.id_reserva) as reservas,
-        COUNT(DISTINCT p.id_pedido) as pedidos,
-        ROUND(SUM(pa.monto), 2) as ingresos,
-        ROUND(AVG(pa.monto), 2) as ticket_promedio,
-        ROUND(SUM(pa.monto) / COUNT(DISTINCT r.id_reserva), 2) as ingreso_por_reserva,
-        COUNT(DISTINCT m.id_mesa) as mesas_utilizadas
-    FROM Turno t
-    LEFT JOIN Reserva r ON t.id_turno = r.id_turno
-    LEFT JOIN Pedido p ON r.id_reserva = p.id_reserva
-    LEFT JOIN Pago pa ON p.id_pedido = pa.id_pedido
-    LEFT JOIN Mesa m ON r.id_mesa = m.id_mesa
-    GROUP BY turno
-    ORDER BY ingresos DESC;
-    """
-    ejecutar_query(conn, query, "QUERY 14: Comparativa de Rendimiento entre Turnos")
-
-def query_15_cancellations_analysis(conn):
-    query = """
-    SELECT 
-        DATE(r.fecha_reserva) as fecha,
-        COUNT(DISTINCT CASE WHEN r.estado = 'cancelada' THEN r.id_reserva END) as canceladas,
-        COUNT(DISTINCT CASE WHEN r.estado = 'confirmada' THEN r.id_reserva END) as confirmadas,
-        COUNT(DISTINCT CASE WHEN r.estado = 'pendiente' THEN r.id_reserva END) as pendientes,
-        ROUND(
-            COUNT(DISTINCT CASE WHEN r.estado = 'cancelada' THEN r.id_reserva END) / 
-            COUNT(DISTINCT r.id_reserva) * 100, 2
-        ) as tasa_cancelacion
-    FROM Reserva r
-    GROUP BY DATE(r.fecha_reserva)
-    ORDER BY fecha DESC;
-    """
-    ejecutar_query(conn, query, "QUERY 15: Análisis de Cancelaciones")
-
-# ===== NUEVAS QUERIES CON WHERE =====
-
-def query_16_pedidos_completados_donde(conn):
-    """Pedidos completados con WHERE"""
-    query = """
-    SELECT 
-        p.codigo_pedido,
-        c.nombre as cliente,
-        m.nombre as mesero,
-        p.fecha_pedido,
-        ROUND(SUM(dp.cantidad * dp.precio_unitario), 2) as total
-    FROM Pedido p
-    INNER JOIN Reserva r ON p.id_reserva = r.id_reserva
-    INNER JOIN Cliente c ON r.id_cliente = c.id_cliente
-    INNER JOIN Mesero m ON p.id_mesero = m.id_mesero
-    LEFT JOIN DetallePedido dp ON p.id_pedido = dp.id_pedido
-    WHERE p.estado = 'completado'
-    GROUP BY p.id_pedido, p.codigo_pedido, c.nombre, m.nombre, p.fecha_pedido
-    ORDER BY p.fecha_pedido DESC;
-    """
-    ejecutar_query(conn, query, "QUERY 16: Pedidos Completados (WHERE estado = 'completado')")
-
-def query_17_clientes_por_telefono(conn):
-    """Clientes con teléfono específico usando WHERE"""
-    query = """
-    SELECT 
-        c.codigo_cliente,
-        c.nombre,
-        c.telefono,
-        c.correo,
-        COUNT(DISTINCT r.id_reserva) as num_reservas,
-        ROUND(SUM(pa.monto), 2) as gasto_total
-    FROM Cliente c
-    LEFT JOIN Reserva r ON c.id_cliente = r.id_cliente
-    LEFT JOIN Pedido p ON r.id_reserva = p.id_reserva
-    LEFT JOIN Pago pa ON p.id_pedido = pa.id_pedido
-    WHERE c.telefono LIKE '321%'
-    GROUP BY c.id_cliente, c.codigo_cliente, c.nombre, c.telefono, c.correo
-    ORDER BY gasto_total DESC;
-    """
-    ejecutar_query(conn, query, "QUERY 17: Clientes con Teléfono 321 (WHERE telefono LIKE '321%')")
-
-def query_18_platos_caros(conn):
-    """Platos con precio mayor a $15 usando WHERE"""
+def query_11_platos_precio_alto(conn):
+    """Platos con precio mayor a $30"""
     query = """
     SELECT 
         p.codigo_plato,
         p.nombre,
         c.nombre as categoria,
         p.precio,
-        SUM(dp.cantidad) as veces_vendido,
-        ROUND(SUM(dp.cantidad * dp.precio_unitario), 2) as ingresos_totales
+        p.tiempo_preparacion_min,
+        COUNT(dp.id_detalle) as veces_vendido,
+        ROUND(SUM(dp.cantidad * dp.precio_unitario), 2) as ingresos
     FROM Plato p
     INNER JOIN CategoriaPlato c ON p.id_categoria = c.id_categoria
     LEFT JOIN DetallePedido dp ON p.id_plato = dp.id_plato
-    WHERE p.precio > 15.00
-    GROUP BY p.id_plato, p.codigo_plato, p.nombre, c.nombre, p.precio
+    WHERE p.precio > 30.00
+    GROUP BY p.id_plato, p.codigo_plato, p.nombre, c.nombre, p.precio, p.tiempo_preparacion_min
     ORDER BY p.precio DESC;
     """
-    ejecutar_query(conn, query, "QUERY 18: Platos Caros (WHERE precio > 15.00)")
+    ejecutar_query(conn, query, "QUERY 11: Platos con Precio > $30 (WHERE)")
 
-def query_19_reservas_confirmadas_fecha(conn):
-    """Reservas confirmadas en una fecha específica usando WHERE"""
+def query_12_reservas_confirmadas(conn):
+    """Reservas confirmadas únicamente"""
     query = """
     SELECT 
         r.codigo_reserva,
         c.nombre as cliente,
         m.codigo_mesa,
         m.capacidad,
+        r.num_personas,
+        t.fecha,
         t.hora_inicio,
-        t.hora_fin,
         r.estado
     FROM Reserva r
     INNER JOIN Cliente c ON r.id_cliente = c.id_cliente
     INNER JOIN Mesa m ON r.id_mesa = m.id_mesa
     INNER JOIN Turno t ON r.id_turno = t.id_turno
-    WHERE r.estado = 'confirmada' AND DATE(r.fecha_reserva) = '2025-11-18'
-    ORDER BY t.hora_inicio;
+    WHERE r.estado = 'confirmada'
+    ORDER BY t.fecha DESC, t.hora_inicio;
     """
-    ejecutar_query(conn, query, "QUERY 19: Reservas Confirmadas del 18-11-2025 (WHERE fecha y estado)")
+    ejecutar_query(conn, query, "QUERY 12: Reservas Confirmadas (WHERE estado)")
 
-def query_20_pagos_por_tarjeta(conn):
-    """Pagos realizados con tarjeta usando WHERE"""
+def query_13_pagos_efectivo(conn):
+    """Pagos realizados en efectivo"""
     query = """
     SELECT 
         pa.codigo_pago,
@@ -399,19 +273,37 @@ def query_20_pagos_por_tarjeta(conn):
         c.nombre as cliente,
         pa.fecha_pago,
         pa.monto,
-        m.nombre as mesero
+        pa.metodo
     FROM Pago pa
     INNER JOIN Pedido p ON pa.id_pedido = p.id_pedido
     INNER JOIN Reserva r ON p.id_reserva = r.id_reserva
     INNER JOIN Cliente c ON r.id_cliente = c.id_cliente
-    INNER JOIN Mesero m ON p.id_mesero = m.id_mesero
-    WHERE pa.metodo = 'Tarjeta'
-    ORDER BY pa.fecha_pago DESC, pa.monto DESC;
+    WHERE pa.metodo = 'efectivo'
+    ORDER BY pa.monto DESC;
     """
-    ejecutar_query(conn, query, "QUERY 20: Pagos con Tarjeta (WHERE metodo = 'Tarjeta')")
+    ejecutar_query(conn, query, "QUERY 13: Pagos en Efectivo (WHERE metodo)")
 
-def query_21_meseros_sin_jefe(conn):
-    """Meseros principales (sin jefe) usando WHERE"""
+def query_14_mesas_capacidad_4(conn):
+    """Mesas con capacidad de 4 personas"""
+    query = """
+    SELECT 
+        m.codigo_mesa,
+        m.capacidad,
+        m.ubicacion,
+        m.estado,
+        COUNT(DISTINCT r.id_reserva) as num_reservas,
+        ROUND(SUM(p.total), 2) as ingresos_generados
+    FROM Mesa m
+    LEFT JOIN Reserva r ON m.id_mesa = r.id_mesa
+    LEFT JOIN Pedido p ON r.id_reserva = p.id_reserva
+    WHERE m.capacidad = 4
+    GROUP BY m.id_mesa, m.codigo_mesa, m.capacidad, m.ubicacion, m.estado
+    ORDER BY ingresos_generados DESC;
+    """
+    ejecutar_query(conn, query, "QUERY 14: Mesas de Capacidad 4 (WHERE)")
+
+def query_15_meseros_sin_jefe(conn):
+    """Meseros que son jefes (sin supervisor)"""
     query = """
     SELECT 
         m.codigo_mesero,
@@ -419,224 +311,415 @@ def query_21_meseros_sin_jefe(conn):
         m.telefono,
         m.correo,
         COUNT(DISTINCT p.id_pedido) as pedidos_atendidos,
-        COUNT(DISTINCT subordinado.id_mesero) as subordinados
+        COUNT(DISTINCT subordinado.id_mesero) as num_subordinados,
+        ROUND(SUM(p.total), 2) as ingresos_generados
     FROM Mesero m
     LEFT JOIN Pedido p ON m.id_mesero = p.id_mesero
     LEFT JOIN Mesero subordinado ON m.id_mesero = subordinado.id_jefe
     WHERE m.id_jefe IS NULL
     GROUP BY m.id_mesero, m.codigo_mesero, m.nombre, m.telefono, m.correo
-    ORDER BY pedidos_atendidos DESC;
-    """
-    ejecutar_query(conn, query, "QUERY 21: Meseros Principales (WHERE id_jefe IS NULL)")
-
-def query_22_mesas_grande_capacidad(conn):
-    """Mesas con capacidad mayor a 6 personas usando WHERE"""
-    query = """
-    SELECT 
-        m.codigo_mesa,
-        m.capacidad,
-        COUNT(DISTINCT r.id_reserva) as reservas_totales,
-        SUM(CASE WHEN r.estado = 'confirmada' THEN 1 ELSE 0 END) as confirmadas,
-        ROUND(COUNT(DISTINCT r.id_reserva) / COUNT(DISTINCT r.id_reserva) * 100, 2) as tasa_ocupacion
-    FROM Mesa m
-    LEFT JOIN Reserva r ON m.id_mesa = r.id_mesa
-    WHERE m.capacidad > 6
-    GROUP BY m.id_mesa, m.codigo_mesa, m.capacidad
-    ORDER BY m.capacidad DESC, reservas_totales DESC;
-    """
-    ejecutar_query(conn, query, "QUERY 22: Mesas Grandes (WHERE capacidad > 6)")
-
-def query_23_categoria_especifica(conn):
-    """Platos de una categoría específica usando WHERE"""
-    query = """
-    SELECT 
-        p.codigo_plato,
-        p.nombre,
-        p.descripcion,
-        p.precio,
-        SUM(dp.cantidad) as veces_vendido,
-        ROUND(SUM(dp.cantidad * dp.precio_unitario), 2) as ingresos
-    FROM Plato p
-    INNER JOIN CategoriaPlato c ON p.id_categoria = c.id_categoria
-    LEFT JOIN DetallePedido dp ON p.id_plato = dp.id_plato
-    WHERE c.nombre = 'Mariscos'
-    GROUP BY p.id_plato, p.codigo_plato, p.nombre, p.descripcion, p.precio
-    ORDER BY ingresos DESC;
-    """
-    ejecutar_query(conn, query, "QUERY 23: Platos de Mariscos (WHERE categoria = 'Mariscos')")
-
-def query_24_clientes_sin_reservas(conn):
-    """Clientes sin reservas usando WHERE"""
-    query = """
-    SELECT 
-        c.codigo_cliente,
-        c.nombre,
-        c.telefono,
-        c.correo
-    FROM Cliente c
-    WHERE c.id_cliente NOT IN (SELECT DISTINCT id_cliente FROM Reserva)
-    ORDER BY c.nombre;
-    """
-    ejecutar_query(conn, query, "QUERY 24: Clientes sin Reservas (WHERE NOT IN)")
-
-def query_25_ingresos_rango_fechas(conn):
-    """Ingresos en un rango de fechas usando WHERE"""
-    query = """
-    SELECT 
-        DATE(pa.fecha_pago) as fecha,
-        COUNT(DISTINCT pa.id_pago) as transacciones,
-        ROUND(SUM(pa.monto), 2) as ingresos,
-        ROUND(AVG(pa.monto), 2) as ticket_promedio
-    FROM Pago pa
-    WHERE pa.fecha_pago BETWEEN '2025-11-20' AND '2025-11-25'
-    GROUP BY DATE(pa.fecha_pago)
-    ORDER BY fecha;
-    """
-    ejecutar_query(conn, query, "QUERY 25: Ingresos 20-11 al 25-11 (WHERE BETWEEN)")
-
-def query_26_meseros_con_ingresos_altos(conn):
-    """Meseros que generaron más de $100 usando WHERE y HAVING"""
-    query = """
-    SELECT 
-        m.codigo_mesero,
-        m.nombre,
-        COUNT(DISTINCT p.id_pedido) as pedidos,
-        ROUND(SUM(pa.monto), 2) as ingresos_generados
-    FROM Mesero m
-    INNER JOIN Pedido p ON m.id_mesero = p.id_mesero
-    INNER JOIN Pago pa ON p.id_pedido = pa.id_pedido
-    WHERE p.estado = 'completado'
-    GROUP BY m.id_mesero, m.codigo_mesero, m.nombre
-    HAVING SUM(pa.monto) > 100
     ORDER BY ingresos_generados DESC;
     """
-    ejecutar_query(conn, query, "QUERY 26: Meseros con Ingresos > $100 (WHERE + HAVING)")
+    ejecutar_query(conn, query, "QUERY 15: Meseros Jefes (WHERE id_jefe IS NULL)")
 
-def query_27_turnos_matutinos(conn):
-    """Turnos de mañana con sus ingresos usando WHERE"""
+def query_16_pedidos_pagados(conn):
+    """Pedidos con estado 'pagado'"""
     query = """
     SELECT 
-        t.codigo_turno,
-        DATE(t.fecha) as fecha,
-        t.hora_inicio,
-        COUNT(DISTINCT r.id_reserva) as reservas,
-        COUNT(DISTINCT p.id_pedido) as pedidos,
-        ROUND(SUM(pa.monto), 2) as ingresos
-    FROM Turno t
-    LEFT JOIN Reserva r ON t.id_turno = r.id_turno
-    LEFT JOIN Pedido p ON r.id_reserva = p.id_reserva
-    LEFT JOIN Pago pa ON p.id_pedido = pa.id_pedido
-    WHERE HOUR(t.hora_inicio) < 12
-    GROUP BY t.id_turno, t.codigo_turno, DATE(t.fecha), t.hora_inicio
-    ORDER BY t.fecha DESC, t.hora_inicio;
+        p.codigo_pedido,
+        c.nombre as cliente,
+        m.nombre as mesero,
+        p.fecha_pedido,
+        p.total,
+        p.estado
+    FROM Pedido p
+    INNER JOIN Reserva r ON p.id_reserva = r.id_reserva
+    INNER JOIN Cliente c ON r.id_cliente = c.id_cliente
+    INNER JOIN Mesero m ON p.id_mesero = m.id_mesero
+    WHERE p.estado = 'pagado'
+    ORDER BY p.total DESC;
     """
-    ejecutar_query(conn, query, "QUERY 27: Turnos Matutinos (WHERE HOUR < 12)")
+    ejecutar_query(conn, query, "QUERY 16: Pedidos Pagados (WHERE estado)")
 
-def query_28_platos_economicos(conn):
-    """Platos económicos menores a $10 usando WHERE"""
+def query_17_categorias_especificas(conn):
+    """Platos de categorías específicas (Entradas, Sopas, Ensaladas)"""
     query = """
     SELECT 
         p.codigo_plato,
         p.nombre,
         c.nombre as categoria,
         p.precio,
-        COUNT(DISTINCT dp.id_pedido) as veces_vendido,
-        ROUND(SUM(dp.cantidad), 2) as total_items_vendidos
+        p.descripcion
     FROM Plato p
     INNER JOIN CategoriaPlato c ON p.id_categoria = c.id_categoria
-    LEFT JOIN DetallePedido dp ON p.id_plato = dp.id_plato
-    WHERE p.precio < 10.00
-    GROUP BY p.id_plato, p.codigo_plato, p.nombre, c.nombre, p.precio
-    ORDER BY p.precio ASC;
+    WHERE c.nombre IN ('Entradas', 'Sopas', 'Ensaladas')
+    ORDER BY c.nombre, p.precio DESC;
     """
-    ejecutar_query(conn, query, "QUERY 28: Platos Económicos (WHERE precio < 10)")
+    ejecutar_query(conn, query, "QUERY 17: Platos de Entradas, Sopas y Ensaladas (WHERE IN)")
 
-def query_29_reservas_pendientes(conn):
-    """Reservas pendientes de confirmación usando WHERE"""
-    query = """
-    SELECT 
-        r.codigo_reserva,
-        c.nombre as cliente,
-        m.codigo_mesa,
-        DATE(r.fecha_reserva) as fecha_reserva,
-        t.hora_inicio,
-        COUNT(DISTINCT p.id_pedido) as pedidos
-    FROM Reserva r
-    INNER JOIN Cliente c ON r.id_cliente = c.id_cliente
-    INNER JOIN Mesa m ON r.id_mesa = m.id_mesa
-    INNER JOIN Turno t ON r.id_turno = t.id_turno
-    LEFT JOIN Pedido p ON r.id_reserva = p.id_reserva
-    WHERE r.estado = 'pendiente'
-    GROUP BY r.id_reserva, r.codigo_reserva, c.nombre, m.codigo_mesa, r.fecha_reserva, t.hora_inicio
-    ORDER BY r.fecha_reserva;
-    """
-    ejecutar_query(conn, query, "QUERY 29: Reservas Pendientes (WHERE estado = 'pendiente')")
-
-def query_30_clientes_con_email(conn):
-    """Clientes que proporcionaron email usando WHERE"""
+def query_18_clientes_con_email(conn):
+    """Clientes que tienen correo electrónico"""
     query = """
     SELECT 
         c.codigo_cliente,
         c.nombre,
-        c.correo,
         c.telefono,
-        COUNT(DISTINCT r.id_reserva) as reservas,
-        ROUND(SUM(pa.monto), 2) as gasto_total
+        c.correo,
+        COUNT(DISTINCT r.id_reserva) as num_reservas
     FROM Cliente c
     LEFT JOIN Reserva r ON c.id_cliente = r.id_cliente
+    WHERE c.correo IS NOT NULL AND c.correo != ''
+    GROUP BY c.id_cliente, c.codigo_cliente, c.nombre, c.telefono, c.correo
+    ORDER BY num_reservas DESC;
+    """
+    ejecutar_query(conn, query, "QUERY 18: Clientes con Email (WHERE IS NOT NULL)")
+
+def query_19_turnos_noche(conn):
+    """Turnos nocturnos (después de las 18:00)"""
+    query = """
+    SELECT 
+        t.codigo_turno,
+        t.fecha,
+        t.hora_inicio,
+        t.hora_fin,
+        COUNT(DISTINCT r.id_reserva) as num_reservas,
+        ROUND(SUM(p.total), 2) as ingresos
+    FROM Turno t
+    LEFT JOIN Reserva r ON t.id_turno = r.id_turno
+    LEFT JOIN Pedido p ON r.id_reserva = p.id_reserva
+    WHERE HOUR(t.hora_inicio) >= 18
+    GROUP BY t.id_turno, t.codigo_turno, t.fecha, t.hora_inicio, t.hora_fin
+    ORDER BY t.fecha DESC;
+    """
+    ejecutar_query(conn, query, "QUERY 19: Turnos Nocturnos (WHERE HOUR >= 18)")
+
+def query_20_platos_preparacion_rapida(conn):
+    """Platos con tiempo de preparación menor a 15 minutos"""
+    query = """
+    SELECT 
+        p.codigo_plato,
+        p.nombre,
+        c.nombre as categoria,
+        p.tiempo_preparacion_min,
+        p.precio,
+        COUNT(dp.id_detalle) as veces_vendido
+    FROM Plato p
+    INNER JOIN CategoriaPlato c ON p.id_categoria = c.id_categoria
+    LEFT JOIN DetallePedido dp ON p.id_plato = dp.id_plato
+    WHERE p.tiempo_preparacion_min < 15
+    GROUP BY p.id_plato, p.codigo_plato, p.nombre, c.nombre, p.tiempo_preparacion_min, p.precio
+    ORDER BY veces_vendido DESC;
+    """
+    ejecutar_query(conn, query, "QUERY 20: Platos de Preparación Rápida (WHERE tiempo < 15)")
+
+# ========== QUERIES 21-30: ANÁLISIS AVANZADOS ==========
+
+def query_21_ingresos_por_fecha(conn):
+    """Ingresos totales agrupados por fecha"""
+    query = """
+    SELECT 
+        pa.fecha_pago,
+        COUNT(DISTINCT pa.id_pago) as num_transacciones,
+        COUNT(DISTINCT p.id_pedido) as num_pedidos,
+        ROUND(SUM(pa.monto), 2) as ingresos_diarios,
+        ROUND(AVG(pa.monto), 2) as ticket_promedio
+    FROM Pago pa
+    LEFT JOIN Pedido p ON pa.id_pedido = p.id_pedido
+    GROUP BY pa.fecha_pago
+    ORDER BY pa.fecha_pago DESC;
+    """
+    ejecutar_query(conn, query, "QUERY 21: Ingresos por Fecha")
+
+def query_22_mesas_por_ubicacion(conn):
+    """Análisis de mesas agrupadas por ubicación"""
+    query = """
+    SELECT 
+        m.ubicacion,
+        COUNT(DISTINCT m.id_mesa) as num_mesas,
+        ROUND(AVG(m.capacidad), 1) as capacidad_promedio,
+        COUNT(DISTINCT r.id_reserva) as total_reservas,
+        ROUND(SUM(p.total), 2) as ingresos_totales
+    FROM Mesa m
+    LEFT JOIN Reserva r ON m.id_mesa = r.id_mesa
+    LEFT JOIN Pedido p ON r.id_reserva = p.id_reserva
+    GROUP BY m.ubicacion
+    ORDER BY ingresos_totales DESC;
+    """
+    ejecutar_query(conn, query, "QUERY 22: Análisis de Mesas por Ubicación")
+
+def query_23_detalle_pedidos_completo(conn):
+    """Detalle completo de pedidos con platos"""
+    query = """
+    SELECT 
+        p.codigo_pedido,
+        c.nombre as cliente,
+        pl.nombre as plato,
+        dp.cantidad,
+        dp.precio_unitario,
+        ROUND(dp.cantidad * dp.precio_unitario, 2) as subtotal,
+        p.fecha_pedido
+    FROM DetallePedido dp
+    INNER JOIN Pedido p ON dp.id_pedido = p.id_pedido
+    INNER JOIN Plato pl ON dp.id_plato = pl.id_plato
+    INNER JOIN Reserva r ON p.id_reserva = r.id_reserva
+    INNER JOIN Cliente c ON r.id_cliente = c.id_cliente
+    ORDER BY p.fecha_pedido DESC, p.codigo_pedido
+    LIMIT 30;
+    """
+    ejecutar_query(conn, query, "QUERY 23: Detalle Completo de Pedidos")
+
+def query_24_meseros_por_rol(conn):
+    """Meseros agrupados por rol en pedidos"""
+    query = """
+    SELECT 
+        mp.rol,
+        COUNT(DISTINCT mp.id_mesero) as num_meseros,
+        COUNT(DISTINCT mp.id_pedido) as num_asignaciones,
+        m.nombre as ejemplo_mesero
+    FROM MeseroPedido mp
+    INNER JOIN Mesero m ON mp.id_mesero = m.id_mesero
+    GROUP BY mp.rol, m.nombre
+    ORDER BY num_asignaciones DESC
+    LIMIT 20;
+    """
+    ejecutar_query(conn, query, "QUERY 24: Meseros por Rol en Pedidos")
+
+def query_25_reservas_multiples_clientes(conn):
+    """Clientes con más de 1 reserva"""
+    query = """
+    SELECT 
+        c.codigo_cliente,
+        c.nombre,
+        c.telefono,
+        COUNT(DISTINCT r.id_reserva) as num_reservas,
+        COUNT(DISTINCT p.id_pedido) as num_pedidos,
+        ROUND(SUM(pa.monto), 2) as gasto_total
+    FROM Cliente c
+    INNER JOIN Reserva r ON c.id_cliente = r.id_cliente
     LEFT JOIN Pedido p ON r.id_reserva = p.id_reserva
     LEFT JOIN Pago pa ON p.id_pedido = pa.id_pedido
-    WHERE c.correo IS NOT NULL AND c.correo != ''
-    GROUP BY c.id_cliente, c.codigo_cliente, c.nombre, c.correo, c.telefono
-    ORDER BY gasto_total DESC;
+    GROUP BY c.id_cliente, c.codigo_cliente, c.nombre, c.telefono
+    HAVING COUNT(DISTINCT r.id_reserva) > 1
+    ORDER BY num_reservas DESC, gasto_total DESC;
     """
-    ejecutar_query(conn, query, "QUERY 30: Clientes con Email (WHERE correo IS NOT NULL)")
+    ejecutar_query(conn, query, "QUERY 25: Clientes con Múltiples Reservas (HAVING)")
 
-def ejecutar_todas_las_queries(conn):
-    """Ejecuta todas las 30 queries"""
-    print("\n" + "🔍"*40)
-    print("EJECUTANDO 30 QUERIES (15 ORIGINALES + 15 CON WHERE)")
-    print("🔍"*40)
+def query_26_pedidos_alto_valor(conn):
+    """Pedidos con valor total mayor a $200"""
+    query = """
+    SELECT 
+        p.codigo_pedido,
+        c.nombre as cliente,
+        m.nombre as mesero,
+        p.fecha_pedido,
+        p.total,
+        p.estado,
+        pa.metodo as metodo_pago
+    FROM Pedido p
+    INNER JOIN Reserva r ON p.id_reserva = r.id_reserva
+    INNER JOIN Cliente c ON r.id_cliente = c.id_cliente
+    INNER JOIN Mesero m ON p.id_mesero = m.id_mesero
+    LEFT JOIN Pago pa ON p.id_pedido = pa.id_pedido
+    WHERE p.total > 200
+    ORDER BY p.total DESC;
+    """
+    ejecutar_query(conn, query, "QUERY 26: Pedidos de Alto Valor (> $200)")
+
+def query_27_platos_no_vendidos(conn):
+    """Platos que no han sido vendidos"""
+    query = """
+    SELECT 
+        p.codigo_plato,
+        p.nombre,
+        c.nombre as categoria,
+        p.precio,
+        p.descripcion,
+        p.disponible
+    FROM Plato p
+    INNER JOIN CategoriaPlato c ON p.id_categoria = c.id_categoria
+    LEFT JOIN DetallePedido dp ON p.id_plato = dp.id_plato
+    WHERE dp.id_detalle IS NULL
+    ORDER BY p.precio DESC;
+    """
+    ejecutar_query(conn, query, "QUERY 27: Platos No Vendidos (LEFT JOIN con NULL)")
+
+def query_28_analisis_capacidad_vs_personas(conn):
+    """Comparación entre capacidad de mesa y número de personas en reserva"""
+    query = """
+    SELECT 
+        m.codigo_mesa,
+        m.capacidad,
+        r.num_personas,
+        CASE 
+            WHEN r.num_personas = m.capacidad THEN 'Uso Óptimo'
+            WHEN r.num_personas < m.capacidad THEN 'Subutilizada'
+            ELSE 'Sobrecapacidad'
+        END as estado_uso,
+        COUNT(*) as veces_reservada
+    FROM Reserva r
+    INNER JOIN Mesa m ON r.id_mesa = m.id_mesa
+    GROUP BY m.codigo_mesa, m.capacidad, r.num_personas
+    ORDER BY m.codigo_mesa, veces_reservada DESC;
+    """
+    ejecutar_query(conn, query, "QUERY 28: Análisis de Uso de Capacidad de Mesas")
+
+def query_29_pagos_por_metodo_fecha(conn):
+    """Pagos agrupados por método y fecha"""
+    query = """
+    SELECT 
+        pa.fecha_pago,
+        pa.metodo,
+        COUNT(*) as num_transacciones,
+        ROUND(SUM(pa.monto), 2) as monto_total,
+        ROUND(AVG(pa.monto), 2) as promedio
+    FROM Pago pa
+    GROUP BY pa.fecha_pago, pa.metodo
+    ORDER BY pa.fecha_pago DESC, monto_total DESC;
+    """
+    ejecutar_query(conn, query, "QUERY 29: Pagos por Método y Fecha")
+
+def query_30_resumen_completo_restaurante(conn):
+    """Resumen general del restaurante"""
+    query = """
+    SELECT 
+        'Total Clientes' as metrica, COUNT(DISTINCT id_cliente) as valor FROM Cliente
+    UNION ALL
+    SELECT 'Total Meseros', COUNT(DISTINCT id_mesero) FROM Mesero
+    UNION ALL
+    SELECT 'Total Mesas', COUNT(DISTINCT id_mesa) FROM Mesa
+    UNION ALL
+    SELECT 'Total Platos', COUNT(DISTINCT id_plato) FROM Plato
+    UNION ALL
+    SELECT 'Total Categorías', COUNT(DISTINCT id_categoria) FROM CategoriaPlato
+    UNION ALL
+    SELECT 'Total Reservas', COUNT(DISTINCT id_reserva) FROM Reserva
+    UNION ALL
+    SELECT 'Total Pedidos', COUNT(DISTINCT id_pedido) FROM Pedido
+    UNION ALL
+    SELECT 'Total Pagos', COUNT(DISTINCT id_pago) FROM Pago
+    UNION ALL
+    SELECT 'Ingresos Totales', CAST(ROUND(SUM(monto), 2) AS UNSIGNED) FROM Pago
+    UNION ALL
+    SELECT 'Ticket Promedio', CAST(ROUND(AVG(monto), 2) AS UNSIGNED) FROM Pago;
+    """
+    ejecutar_query(conn, query, "QUERY 30: Resumen General del Restaurante")
+
+
+def query_31_mesas_disponibles_por_turno(conn):
+    """Mesas disponibles por turno (no reservadas)"""
+    query = """
+    SELECT 
+        t.codigo_turno,
+        t.fecha,
+        t.hora_inicio,
+        t.hora_fin,
+        m.codigo_mesa,
+        m.capacidad,
+        m.ubicacion,
+        m.estado,
+        CASE 
+            WHEN r.id_reserva IS NULL THEN 'DISPONIBLE'
+            ELSE 'RESERVADA'
+        END as disponibilidad
+    FROM Turno t
+    CROSS JOIN Mesa m
+    LEFT JOIN Reserva r ON t.id_turno = r.id_turno 
+        AND m.id_mesa = r.id_mesa
+        AND r.estado NOT IN ('cancelada')
+    WHERE m.estado IN ('libre', 'reservada')
+    ORDER BY t.fecha DESC, t.hora_inicio, m.codigo_mesa;
+    """
+    ejecutar_query(conn, query, "QUERY 31: Mesas Disponibles por Turno")
+
+def query_32_mesas_libres_turno_especifico(conn):
+    """Mesas disponibles para un turno específico (ejemplo: próximos turnos)"""
+    query = """
+    SELECT 
+        t.codigo_turno,
+        t.fecha,
+        t.hora_inicio,
+        t.hora_fin,
+        COUNT(DISTINCT CASE WHEN r.id_reserva IS NULL THEN m.id_mesa END) as mesas_disponibles,
+        COUNT(DISTINCT CASE WHEN r.id_reserva IS NOT NULL THEN m.id_mesa END) as mesas_reservadas,
+        COUNT(DISTINCT m.id_mesa) as total_mesas,
+        GROUP_CONCAT(
+            DISTINCT CASE 
+                WHEN r.id_reserva IS NULL 
+                THEN CONCAT(m.codigo_mesa, ' (Cap: ', m.capacidad, ')')
+            END 
+            ORDER BY m.codigo_mesa 
+            SEPARATOR ', '
+        ) as mesas_disponibles_detalle
+    FROM Turno t
+    CROSS JOIN Mesa m
+    LEFT JOIN Reserva r ON t.id_turno = r.id_turno 
+        AND m.id_mesa = r.id_mesa
+         AND r.estado IN ('confirmada', 'pendiente', 'en_servicio')
+    WHERE m.estado IN ('libre', 'reservada')
+        AND t.fecha >= CURDATE()
+    GROUP BY t.id_turno, t.codigo_turno, t.fecha, t.hora_inicio, t.hora_fin
+    ORDER BY t.fecha, t.hora_inicio;
+    """
+    ejecutar_query(conn, query, "QUERY 32: Resumen de Disponibilidad por Turno")
+# ========== FUNCIÓN PRINCIPAL ==========
+
+def ejecutar_todas_las_queries():
+    """Ejecuta todas las 30 queries del sistema"""
+    conn = conectar_bd()
+    if conn is None:
+        print("❌ No se pudo conectar a la base de datos")
+        return
     
-    # Queries originales
-    query_1_ingresos_por_mesero(conn)
-    query_2_platos_mas_vendidos(conn)
-    query_3_ocupacion_mesas(conn)
+    print("\n" + "🔍"*50)
+    print(" EJECUTANDO 30 QUERIES - SISTEMA DE GESTIÓN DE RESTAURANTE")
+    print("🔍"*50)
+    
+    # QUERIES 1-10: Análisis General
+    query_1_top_platos_vendidos(conn)
+    query_2_ingresos_por_categoria(conn)
+    query_3_meseros_top_desempenio(conn)
     query_4_clientes_frecuentes(conn)
-    query_5_categorias_mas_vendidas(conn)
+    query_5_ocupacion_mesas(conn)
     query_6_analisis_turnos(conn)
-    query_7_metodos_pago(conn)
-    query_8_estado_pedidos(conn)
+    query_7_metodos_pago_distribucion(conn)
+    query_8_estados_pedidos(conn)
     query_9_reservas_por_estado(conn)
-    query_10_meseros_jerarquia(conn)
-    query_11_ingresos_diarios(conn)
-    query_12_platos_por_pedido(conn)
-    query_13_capacidad_mesas_optimizacion(conn)
-    query_14_comparativa_turnos(conn)
-    query_15_cancellations_analysis(conn)
+    query_10_jerarquia_meseros(conn)
     
-    # Nuevas queries con WHERE
-    query_16_pedidos_completados_donde(conn)
-    query_17_clientes_por_telefono(conn)
-    query_18_platos_caros(conn)
-    query_19_reservas_confirmadas_fecha(conn)
-    query_20_pagos_por_tarjeta(conn)
-    query_21_meseros_sin_jefe(conn)
-    query_22_mesas_grande_capacidad(conn)
-    query_23_categoria_especifica(conn)
-    query_24_clientes_sin_reservas(conn)
-    query_25_ingresos_rango_fechas(conn)
-    query_26_meseros_con_ingresos_altos(conn)
-    query_27_turnos_matutinos(conn)
-    query_28_platos_economicos(conn)
-    query_29_reservas_pendientes(conn)
-    query_30_clientes_con_email(conn)
+    # QUERIES 11-20: Análisis con WHERE
+    query_11_platos_precio_alto(conn)
+    query_12_reservas_confirmadas(conn)
+    query_13_pagos_efectivo(conn)
+    query_14_mesas_capacidad_4(conn)
+    query_15_meseros_sin_jefe(conn)
+    query_16_pedidos_pagados(conn)
+    query_17_categorias_especificas(conn)
+    query_18_clientes_con_email(conn)
+    query_19_turnos_noche(conn)
+    query_20_platos_preparacion_rapida(conn)
     
-    print("\n" + ":3"*40)
-    print("¡TODAS LAS 30 QUERIES SE HAN EJECUTADO CORRECTAMENTE!")
-    print(":3"*40 + "\n")
+    # QUERIES 21-30: Análisis Avanzados
+    query_21_ingresos_por_fecha(conn)
+    query_22_mesas_por_ubicacion(conn)
+    query_23_detalle_pedidos_completo(conn)
+    query_24_meseros_por_rol(conn)
+    query_25_reservas_multiples_clientes(conn)
+    query_26_pedidos_alto_valor(conn)
+    query_27_platos_no_vendidos(conn)
+    query_28_analisis_capacidad_vs_personas(conn)
+    query_29_pagos_por_metodo_fecha(conn)
+    query_30_resumen_completo_restaurante(conn)
+    
+        # QUERIES 31-32: Disponibilidad de Mesas
+    query_31_mesas_disponibles_por_turno(conn)
+    query_32_mesas_libres_turno_especifico(conn)
+    
+    conn.close()
+    
+    print("\n" + "✅"*50)
+    print(" ¡TODAS LAS 30 QUERIES EJECUTADAS EXITOSAMENTE!")
+    print("✅"*50 + "\n")
+
 
 if __name__ == "__main__":
-    conn = conectar_bd()
-    ejecutar_todas_las_queries(conn)
-    conn.close()
+    ejecutar_todas_las_queries()

@@ -79,7 +79,9 @@ def create_table_plato(connection):
                     codigo_plato VARCHAR(50) NOT NULL UNIQUE,
                     nombre VARCHAR(50) NOT NULL,
                     descripcion VARCHAR(50),
-                    precio DECIMAL(10,4) NOT NULL,
+                    precio DECIMAL(10,4) NOT NULL CHECK (precio >= 0),
+                    disponible BOOLEAN NOT NULL DEFAULT TRUE,
+                    tiempo_preparacion_min SMALLINT UNSIGNED NOT NULL DEFAULT 0,
                     id_categoria INT,
                     FOREIGN KEY (id_categoria) REFERENCES CategoriaPlato(id_categoria)
                 )
@@ -100,7 +102,9 @@ def create_table_mesa(connection):
                 CREATE TABLE Mesa (
                     id_mesa INT AUTO_INCREMENT PRIMARY KEY,
                     codigo_mesa VARCHAR(50) NOT NULL UNIQUE,
-                    capacidad INT NOT NULL
+                    capacidad INT NOT NULL,
+                    ubicacion VARCHAR(80),
+                    estado ENUM('libre','reservada','ocupada','fuera_servicio') NOT NULL DEFAULT 'libre'
                 )
             """)
             print("Tabla Mesa creada exitosamente")
@@ -163,12 +167,15 @@ def create_table_reserva(connection):
                     id_cliente INT NOT NULL,
                     id_mesa INT NOT NULL,
                     id_turno INT NOT NULL,
+                    num_personas TINYINT UNSIGNED NOT NULL CHECK (num_personas > 0),
+                    estado ENUM('pendiente','confirmada','cancelada','en_servicio','finalizada') NOT NULL DEFAULT 'pendiente',
                     fecha_reserva DATE NOT NULL,
                     codigo_reserva VARCHAR(50) NOT NULL UNIQUE,
-                    estado VARCHAR(50) NOT NULL,
+                    observaciones TEXT,
                     FOREIGN KEY (id_cliente) REFERENCES Cliente(id_cliente),
                     FOREIGN KEY (id_mesa) REFERENCES Mesa(id_mesa),
-                    FOREIGN KEY (id_turno) REFERENCES Turno(id_turno)
+                    FOREIGN KEY (id_turno) REFERENCES Turno(id_turno),
+                    UNIQUE(id_mesa, id_turno)
                 )
             """)
             print("Tabla Reserva creada exitosamente")
@@ -191,6 +198,7 @@ def create_table_mesero(connection):
                     telefono VARCHAR(50) NOT NULL,
                     correo VARCHAR(50) NULL,
                     id_jefe INT NULL,
+                    activo BOOLEAN NOT NULL DEFAULT TRUE,
                     FOREIGN KEY (id_jefe) REFERENCES Mesero(id_mesero)
                 )
             """)
@@ -210,12 +218,15 @@ def create_table_pedido(connection):
                 CREATE TABLE Pedido (
                     id_pedido INT AUTO_INCREMENT PRIMARY KEY,
                     id_reserva INT NOT NULL,
+                    id_mesa INT NOT NULL,  
                     codigo_pedido VARCHAR(50) NOT NULL UNIQUE,
+                    estado ENUM('abierto','en_preparacion','servido','cerrado','pagado','anulado') NOT NULL DEFAULT 'abierto',
                     fecha_pedido DATE NOT NULL,
-                    estado VARCHAR(50) NOT NULL,
+                    total DECIMAL(10,2) NOT NULL DEFAULT 0.00,
                     id_mesero INT NOT NULL,
                     FOREIGN KEY (id_reserva) REFERENCES Reserva(id_reserva),
-                    FOREIGN KEY (id_mesero) REFERENCES Mesero(id_mesero)
+                    FOREIGN KEY (id_mesero) REFERENCES Mesero(id_mesero),
+                    FOREIGN KEY (id_mesa) REFERENCES Mesa(id_mesa)
                 )
             """)
             print("Tabla Pedido creada exitosamente")
@@ -235,11 +246,12 @@ def create_table_detalle_pedido(connection):
                     id_detalle INT AUTO_INCREMENT PRIMARY KEY,
                     id_pedido INT NOT NULL,
                     id_plato INT NOT NULL,
+                    cantidad SMALLINT UNSIGNED NOT NULL CHECK (cantidad > 0),
                     codigo_detallePedido VARCHAR(50) NOT NULL UNIQUE,
-                    cantidad INT NOT NULL,
                     precio_unitario DECIMAL(10,4) NOT NULL,
                     FOREIGN KEY (id_pedido) REFERENCES Pedido(id_pedido),
                     FOREIGN KEY (id_plato) REFERENCES Plato(id_plato)
+               
                 )
             """)
             print("Tabla DetallePedido creada exitosamente")
@@ -260,8 +272,8 @@ def create_table_pago(connection):
                     codigo_pago VARCHAR(50) NOT NULL UNIQUE,
                     id_pedido INT NOT NULL,
                     fecha_pago DATE NOT NULL,
-                    monto DECIMAL(10,4) NOT NULL,
-                    metodo VARCHAR(50) NOT NULL,
+                    monto DECIMAL(10,4) NOT NULL CHECK (monto > 0),
+                    metodo ENUM('efectivo','tarjeta','pos','transferencia') NOT NULL,
                     FOREIGN KEY (id_pedido) REFERENCES Pedido(id_pedido)
                 )
             """)
