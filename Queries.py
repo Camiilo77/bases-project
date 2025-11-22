@@ -654,7 +654,7 @@ def query_32_mesas_libres_turno_especifico(conn):
     CROSS JOIN Mesa m
     LEFT JOIN Reserva r ON t.id_turno = r.id_turno 
         AND m.id_mesa = r.id_mesa
-         AND r.estado IN ('confirmada', 'pendiente', 'en_servicio')
+        AND r.estado IN ('confirmada', 'pendiente', 'en_servicio')
     WHERE m.estado IN ('libre', 'reservada')
         AND t.fecha >= CURDATE()
     GROUP BY t.id_turno, t.codigo_turno, t.fecha, t.hora_inicio, t.hora_fin

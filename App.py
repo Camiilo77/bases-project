@@ -282,7 +282,7 @@ if __name__ == "__main__":
     print("$"*60)
     
     # Crear tablas e insertar datos
-    #crear_todas_las_tablas()
+    crear_todas_las_tablas()
     insertar_datos_completos()
     
     print("\n" + ":3"*60)
