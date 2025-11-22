@@ -21,11 +21,11 @@ def ejecutar_query(conn, query, descripcion):
             
             if len(resultados) > 20:
                 print(f"\n... {len(resultados) - 20} filas más ...")
-            print(f"\n✅ Total de registros: {len(resultados)}")
+            print(f"\n Total de registros: {len(resultados)}")
         else:
-            print("⚠️ No hay resultados")
+            print(" No hay resultados")
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f" Error: {e}")
     finally:
         cursor.close()
 
@@ -667,7 +667,7 @@ def ejecutar_todas_las_queries():
     """Ejecuta todas las 30 queries del sistema"""
     conn = conectar_bd()
     if conn is None:
-        print("❌ No se pudo conectar a la base de datos")
+        print(" No se pudo conectar a la base de datos")
         return
     
     print("\n" + "🔍"*50)
