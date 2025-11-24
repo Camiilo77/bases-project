@@ -13,18 +13,14 @@ from Insertions import (
 )
 
 def crear_todas_las_tablas():
-    """Crea la base de datos y todas las tablas"""
     print("\n" + "="*60)
     print("CREANDO BASE DE DATOS Y TABLAS")
     print("="*60)
-    
     create_database()
     conn = conectar_bd()
-    
     if conn is None:
         print("No se pudo conectar a la base de datos")
         return
-    
     create_table_categoria_plato(conn)
     create_table_plato(conn)
     create_table_mesa(conn)
@@ -36,23 +32,17 @@ def crear_todas_las_tablas():
     create_table_detalle_pedido(conn)
     create_table_pago(conn)
     create_table_mesero_pedido(conn)
-    
     conn.close()
     print("\nTodas las tablas fueron creadas exitosamente\n")
 
-
 def insertar_datos_completos():
-    """Inserta 50 registros en cada tabla"""
     conn = conectar_bd()
     if conn is None:
         print("No se pudo conectar a la base de datos")
         return
-    
     print("\n" + "="*60)
     print("INSERTANDO DATOS EN LAS TABLAS")
     print("="*60)
-    
-    # ========== 1. CATEGORÍAS DE PLATOS (50) ==========
     print("\nInsertando Categorías de Platos...")
     categorias = [
         ("Entradas", "CAT001"), ("Sopas", "CAT002"), ("Ensaladas", "CAT003"),
@@ -75,8 +65,6 @@ def insertar_datos_completos():
     ]
     for nombre, codigo in categorias:
         insertar_categoria_plato(conn, nombre, codigo)
-    
-    # ========== 2. PLATOS (50) ==========
     print("\nInsertando Platos...")
     platos = [
         ("Bruschetta Italiana", "PL001", "Pan con tomate, albahaca y aceite", 12.50, 1, True, 10),
@@ -132,8 +120,6 @@ def insertar_datos_completos():
     ]
     for nombre, codigo, desc, precio, cat, disp, tiempo in platos:
         insertar_plato(conn, nombre, codigo, desc, precio, cat, disp, tiempo)
-    
-    # ========== 3. MESAS (50) ==========
     print("\nInsertando Mesas...")
     ubicaciones = ["Terraza", "Interior Ventana", "Interior Centro", "VIP", "Bar", "Patio", "Salón Principal"]
     estados = ["libre", "reservada", "ocupada", "libre"]
@@ -143,8 +129,6 @@ def insertar_datos_completos():
         ubicacion = ubicaciones[i % len(ubicaciones)]
         estado = estados[i % len(estados)]
         insertar_mesa(conn, codigo, capacidad, ubicacion, estado)
-    
-    # ========== 4. CLIENTES (50) ==========
     print("\nInsertando Clientes...")
     nombres = [
         "Juan Pérez", "María García", "Carlos López", "Ana Martínez", "Luis Rodríguez",
@@ -163,8 +147,6 @@ def insertar_datos_completos():
         telefono = f"+52155{1000+i:04d}{i:04d}"
         correo = f"cliente{i}@email.com"
         insertar_cliente(conn, codigo, nombre, telefono, correo)
-    
-    # ========== 5. TURNOS (50) ==========
     print("\nInsertando Turnos...")
     from datetime import date, time, timedelta
     fecha_base = date(2024, 11, 1)
@@ -174,7 +156,7 @@ def insertar_datos_completos():
         ("Cena", time(18, 0), time(23, 0))
     ]
     contador = 1
-    for dia in range(17):  # 17 días para tener más de 50 turnos
+    for dia in range(17):
         fecha = fecha_base + timedelta(days=dia)
         for tipo, inicio, fin in turnos_tipo:
             if contador > 50:
@@ -184,8 +166,6 @@ def insertar_datos_completos():
             contador += 1
         if contador > 50:
             break
-    
-    # ========== 6. MESEROS (50) ==========
     print("\nInsertando Meseros...")
     nombres_meseros = [
         "Alberto Sánchez", "Mónica Pérez", "Raúl Torres", "Gabriela López", "Iván Martín",
@@ -199,20 +179,15 @@ def insertar_datos_completos():
         "Enrique Delgado", "Jimena Cortés", "Arturo Fuentes", "Estrella Benítez", "Tomás Salazar",
         "Regina Pacheco", "Ignacio Lara", "Adriana Carrillo", "Gonzalo Espinoza", "Marisol Domínguez"
     ]
-    # Primeros 5 son jefes (sin id_jefe)
     for i in range(1, 6):
         codigo = f"MES{i:03d}"
         insertar_mesero(conn, codigo, nombres_meseros[i-1], f"+52155{2000+i:04d}{i:04d}", 
                        f"mesero{i}@restaurante.com", None, True)
-    
-    # Resto son meseros regulares con jefe asignado
     for i in range(6, 51):
         codigo = f"MES{i:03d}"
-        id_jefe = ((i-6) % 5) + 1  # Asigna a uno de los 5 jefes
+        id_jefe = ((i-6) % 5) + 1
         insertar_mesero(conn, codigo, nombres_meseros[i-1], f"+52155{2000+i:04d}{i:04d}",
                        f"mesero{i}@restaurante.com", id_jefe, True)
-    
-    # ========== 7. RESERVAS (50) ==========
     print("\nInsertando Reservas...")
     estados_reserva = ["confirmada", "pendiente", "en_servicio", "finalizada"]
     for i in range(1, 51):
@@ -226,8 +201,6 @@ def insertar_datos_completos():
         obs = "Sin observaciones" if i % 3 == 0 else None
         insertar_reserva(conn, id_cliente, id_mesa, id_turno, num_personas, 
                         fecha_reserva, codigo, estado, obs)
-    
-    # ========== 8. PEDIDOS (50) ==========
     print("\nInsertando Pedidos...")
     estados_pedido = ["abierto", "en_preparacion", "servido", "cerrado", "pagado"]
     for i in range(1, 51):
@@ -239,8 +212,6 @@ def insertar_datos_completos():
         total = round(50.00 + (i * 10.5), 2)
         id_mesero = ((i-1) % 50) + 1
         insertar_pedido(conn, id_reserva, id_mesa, codigo, estado, fecha_pedido, total, id_mesero)
-    
-    # ========== 9. DETALLE PEDIDOS (50) ==========
     print("\nInsertando Detalles de Pedidos...")
     for i in range(1, 51):
         codigo = f"DET{i:03d}"
@@ -249,8 +220,6 @@ def insertar_datos_completos():
         cantidad = 1 if i % 3 == 0 else (2 if i % 3 == 1 else 3)
         precio_unitario = round(10.00 + (i * 0.75), 2)
         insertar_detalle_pedido(conn, id_pedido, id_plato, codigo, cantidad, precio_unitario)
-    
-    # ========== 10. PAGOS (50) ==========
     print("\nInsertando Pagos...")
     metodos = ["efectivo", "tarjeta", "pos", "transferencia"]
     for i in range(1, 51):
@@ -260,8 +229,6 @@ def insertar_datos_completos():
         monto = round(50.00 + (i * 10.5), 2)
         metodo = metodos[i % len(metodos)]
         insertar_pago(conn, codigo, id_pedido, fecha_pago, monto, metodo)
-    
-    # ========== 11. MESERO_PEDIDO (50) ==========
     print("\nInsertando Mesero-Pedido...")
     roles = ["Principal", "Asistente", "Ayudante", "Soporte"]
     for i in range(1, 51):
@@ -269,22 +236,17 @@ def insertar_datos_completos():
         id_pedido = i
         rol = roles[i % len(roles)]
         insertar_mesero_pedido(conn, id_mesero, id_pedido, rol)
-    
     conn.close()
     print("\n" + "="*60)
     print("INSERCIÓN DE DATOS COMPLETADA")
     print("="*60)
 
-
 if __name__ == "__main__":
     print("\n" + "$"*60)
     print("SISTEMA DE GESTIÓN DE RESTAURANTE")
     print("$"*60)
-    
-    # Crear tablas e insertar datos
     crear_todas_las_tablas()
     insertar_datos_completos()
-    
     print("\n" + ":3"*60)
     print("PROCESO COMPLETADO EXITOSAMENTE")
     print(":3"*60)
