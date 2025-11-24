@@ -4,7 +4,7 @@ from mysql.connector import Error
 DB_CONFIG = {
     "host": "localhost",
     "user": "root",
-    "password": "mysqlPassword",
+    "password": "32345",
     "database": "Proyecto_Restaurante"
 }
 
@@ -292,10 +292,10 @@ def create_table_mesero_pedido(connection):
         else:
          cursor.execute('''
             CREATE TABLE IF NOT EXISTS MeseroPedido (
-                id INT PRIMARY KEY AUTO_INCREMENT,
                 id_mesero INT NOT NULL,
                 id_pedido INT NOT NULL,
                 rol VARCHAR(50),
+                primary key (id_mesero, id_pedido),
                 FOREIGN KEY (id_mesero) REFERENCES mesero(id_mesero),
                 FOREIGN KEY (id_pedido) REFERENCES pedido(id_pedido)
             )
