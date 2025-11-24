@@ -4,7 +4,7 @@ from Tables import conectar_bd
 def ejecutar_query(conn, query, descripcion):
     """Función auxiliar para ejecutar y mostrar resultados"""
     print(f"\n{'='*80}")
-    print(f"📊 {descripcion}")
+    print(f"{descripcion}")
     print(f"{'='*80}")
     try:
         cursor = conn.cursor()
@@ -670,9 +670,9 @@ def ejecutar_todas_las_queries():
         print(" No se pudo conectar a la base de datos")
         return
     
-    print("\n" + "🔍"*50)
+    print("\n" + "="*50)
     print(" EJECUTANDO 30 QUERIES - SISTEMA DE GESTIÓN DE RESTAURANTE")
-    print("🔍"*50)
+    print("="*50)
     
     # QUERIES 1-10: Análisis General
     query_1_top_platos_vendidos(conn)
@@ -710,15 +710,15 @@ def ejecutar_todas_las_queries():
     query_29_pagos_por_metodo_fecha(conn)
     query_30_resumen_completo_restaurante(conn)
     
-        # QUERIES 31-32: Disponibilidad de Mesas
+    # QUERIES 31-32: Disponibilidad de Mesas
     query_31_mesas_disponibles_por_turno(conn)
     query_32_mesas_libres_turno_especifico(conn)
     
     conn.close()
     
-    print("\n" + "✅"*50)
+    print("\n" + "="*50)
     print(" ¡TODAS LAS 30 QUERIES EJECUTADAS EXITOSAMENTE!")
-    print("✅"*50 + "\n")
+    print("="*50 + "\n")
 
 
 if __name__ == "__main__":

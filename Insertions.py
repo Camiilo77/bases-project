@@ -10,11 +10,11 @@ def insertar_categoria_plato(connection, nombre, codigo_categoria):
             (nombre, codigo_categoria)
         )
         connection.commit()
-        print(f"✓ Categoría '{nombre}' insertada")
+        print(f"Categoría '{nombre}' insertada")
     except IntegrityError:
-        print(f"✗ La categoría con código '{codigo_categoria}' ya existe")
+        print(f"La categoría con código '{codigo_categoria}' ya existe")
     except Error as err:
-        print(f"✗ Error al insertar categoría: {err}")
+        print(f"Error al insertar categoría: {err}")
     finally:
         cursor.close()
 
@@ -29,11 +29,11 @@ def insertar_plato(connection, nombre, codigo_plato, descripcion, precio, id_cat
             (nombre, codigo_plato, descripcion, precio, id_categoria, disponible, tiempo_preparacion_min)
         )
         connection.commit()
-        print(f"✓ Plato '{nombre}' insertado")
+        print(f"Plato '{nombre}' insertado")
     except IntegrityError:
-        print(f"✗ El plato con código '{codigo_plato}' ya existe")
+        print(f"El plato con código '{codigo_plato}' ya existe")
     except Error as err:
-        print(f"✗ Error al insertar plato: {err}")
+        print(f"Error al insertar plato: {err}")
     finally:
         cursor.close()
 
@@ -46,11 +46,11 @@ def insertar_mesa(connection, codigo_mesa, capacidad, ubicacion="", estado="libr
             (codigo_mesa, capacidad, ubicacion, estado)
         )
         connection.commit()
-        print(f"✓ Mesa '{codigo_mesa}' insertada")
+        print(f"Mesa '{codigo_mesa}' insertada")
     except IntegrityError:
-        print(f"✗ La mesa con código '{codigo_mesa}' ya existe")
+        print(f"La mesa con código '{codigo_mesa}' ya existe")
     except Error as err:
-        print(f"✗ Error al insertar mesa: {err}")
+        print(f"Error al insertar mesa: {err}")
     finally:
         cursor.close()
 
@@ -63,11 +63,11 @@ def insertar_cliente(connection, codigo_cliente, nombre, telefono, correo):
             (codigo_cliente, nombre, telefono, correo)
         )
         connection.commit()
-        print(f"✓ Cliente '{nombre}' insertado")
+        print(f"Cliente '{nombre}' insertado")
     except IntegrityError:
-        print(f"✗ El cliente con código '{codigo_cliente}' ya existe")
+        print(f"El cliente con código '{codigo_cliente}' ya existe")
     except Error as err:
-        print(f"✗ Error al insertar cliente: {err}")
+        print(f"Error al insertar cliente: {err}")
     finally:
         cursor.close()
 
@@ -80,11 +80,11 @@ def insertar_turno(connection, codigo_turno, fecha, hora_inicio, hora_fin):
             (codigo_turno, fecha, hora_inicio, hora_fin)
         )
         connection.commit()
-        print(f"✓ Turno '{codigo_turno}' insertado")
+        print(f"Turno '{codigo_turno}' insertado")
     except IntegrityError:
-        print(f"✗ El turno con código '{codigo_turno}' ya existe")
+        print(f"El turno con código '{codigo_turno}' ya existe")
     except Error as err:
-        print(f"✗ Error al insertar turno: {err}")
+        print(f"Error al insertar turno: {err}")
     finally:
         cursor.close()
 
@@ -98,11 +98,11 @@ def insertar_reserva(connection, id_cliente, id_mesa, id_turno, num_personas, fe
             (id_cliente, id_mesa, id_turno, num_personas, fecha_reserva, codigo_reserva, estado, observaciones)
         )
         connection.commit()
-        print(f"✓ Reserva '{codigo_reserva}' insertada")
+        print(f"Reserva '{codigo_reserva}' insertada")
     except IntegrityError:
-        print(f"✗ La reserva con código '{codigo_reserva}' ya existe")
+        print(f"La reserva con código '{codigo_reserva}' ya existe")
     except Error as err:
-        print(f"✗ Error al insertar reserva: {err}")
+        print(f"Error al insertar reserva: {err}")
     finally:
         cursor.close()
 
@@ -115,11 +115,11 @@ def insertar_mesero(connection, codigo_mesero, nombre, telefono, correo, id_jefe
             (codigo_mesero, nombre, telefono, correo, id_jefe, activo)
         )
         connection.commit()
-        print(f"✓ Mesero '{nombre}' insertado")
+        print(f"Mesero '{nombre}' insertado")
     except IntegrityError:
-        print(f"✗ El mesero con código '{codigo_mesero}' ya existe")
+        print(f"El mesero con código '{codigo_mesero}' ya existe")
     except Error as err:
-        print(f"✗ Error al insertar mesero: {err}")
+        print(f"Error al insertar mesero: {err}")
     finally:
         cursor.close()
 
@@ -133,11 +133,11 @@ def insertar_pedido(connection, id_reserva, id_mesa, codigo_pedido, estado, fech
             (id_reserva, id_mesa, codigo_pedido, estado, fecha_pedido, total, id_mesero)
         )
         connection.commit()
-        print(f"✓ Pedido '{codigo_pedido}' insertado")
+        print(f"Pedido '{codigo_pedido}' insertado")
     except IntegrityError:
-        print(f"✗ El pedido con código '{codigo_pedido}' ya existe")
+        print(f"El pedido con código '{codigo_pedido}' ya existe")
     except Error as err:
-        print(f"✗ Error al insertar pedido: {err}")
+        print(f"Error al insertar pedido: {err}")
     finally:
         cursor.close()
 
@@ -151,11 +151,11 @@ def insertar_detalle_pedido(connection, id_pedido, id_plato, codigo_detallePedid
             (id_pedido, id_plato, codigo_detallePedido, cantidad, precio_unitario)
         )
         connection.commit()
-        print(f"✓ Detalle '{codigo_detallePedido}' insertado")
+        print(f"Detalle '{codigo_detallePedido}' insertado")
     except IntegrityError:
-        print(f"✗ El detalle con código '{codigo_detallePedido}' ya existe")
+        print(f"El detalle con código '{codigo_detallePedido}' ya existe")
     except Error as err:
-        print(f"✗ Error al insertar detalle de pedido: {err}")
+        print(f"Error al insertar detalle de pedido: {err}")
     finally:
         cursor.close()
 
@@ -168,11 +168,11 @@ def insertar_pago(connection, codigo_pago, id_pedido, fecha_pago, monto, metodo)
             (codigo_pago, id_pedido, fecha_pago, monto, metodo)
         )
         connection.commit()
-        print(f"✓ Pago '{codigo_pago}' insertado")
+        print(f"Pago '{codigo_pago}' insertado")
     except IntegrityError:
-        print(f"✗ El pago con código '{codigo_pago}' ya existe")
+        print(f"El pago con código '{codigo_pago}' ya existe")
     except Error as err:
-        print(f"✗ Error al insertar pago: {err}")
+        print(f"Error al insertar pago: {err}")
     finally:
         cursor.close()
 
@@ -185,10 +185,10 @@ def insertar_mesero_pedido(connection, id_mesero, id_pedido, rol):
             (id_mesero, id_pedido, rol)
         )
         connection.commit()
-        print(f"✓ Asignación mesero-pedido insertada")
+        print(f"Asignación mesero-pedido insertada")
     except IntegrityError:
-        print(f"✗ La asignación ya existe")
+        print(f"La asignación ya existe")
     except Error as err:
-        print(f"✗ Error al insertar mesero-pedido: {err}")
+        print(f"Error al insertar mesero-pedido: {err}")
     finally:
         cursor.close()
