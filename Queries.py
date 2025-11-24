@@ -1,8 +1,6 @@
-# ARCHIVO DE CONSULTAS SQL - 30 QUERIES
 from Tables import conectar_bd
 
 def ejecutar_query(conn, query, descripcion):
-    """Función auxiliar para ejecutar y mostrar resultados"""
     print(f"\n{'='*80}")
     print(f"{descripcion}")
     print(f"{'='*80}")
@@ -10,15 +8,12 @@ def ejecutar_query(conn, query, descripcion):
         cursor = conn.cursor()
         cursor.execute(query)
         resultados = cursor.fetchall()
-        
         if resultados:
             columnas = [i[0] for i in cursor.description]
             print(f"\n{' | '.join(columnas)}")
             print("-" * 120)
-            
-            for fila in resultados[:20]:  # Mostrar máximo 20 filas
+            for fila in resultados[:20]:
                 print(f"{' | '.join(str(x) for x in fila)}")
-            
             if len(resultados) > 20:
                 print(f"\n... {len(resultados) - 20} filas más ...")
             print(f"\n Total de registros: {len(resultados)}")
@@ -29,10 +24,7 @@ def ejecutar_query(conn, query, descripcion):
     finally:
         cursor.close()
 
-# ========== QUERIES 1-10: ANÁLISIS GENERAL ==========
-
 def query_1_top_platos_vendidos(conn):
-    """Top 10 platos más vendidos con ingresos"""
     query = """
     SELECT 
         p.codigo_plato,
@@ -52,7 +44,6 @@ def query_1_top_platos_vendidos(conn):
     ejecutar_query(conn, query, "QUERY 1: Top 10 Platos Más Vendidos")
 
 def query_2_ingresos_por_categoria(conn):
-    """Ingresos totales por categoría de platos"""
     query = """
     SELECT 
         c.codigo_categoria,
@@ -71,7 +62,6 @@ def query_2_ingresos_por_categoria(conn):
     ejecutar_query(conn, query, "QUERY 2: Ingresos por Categoría")
 
 def query_3_meseros_top_desempenio(conn):
-    """Meseros con mejor desempeño (más pedidos e ingresos)"""
     query = """
     SELECT 
         m.codigo_mesero,
@@ -92,7 +82,6 @@ def query_3_meseros_top_desempenio(conn):
     ejecutar_query(conn, query, "QUERY 3: Top 15 Meseros por Desempeño")
 
 def query_4_clientes_frecuentes(conn):
-    """Clientes más frecuentes y su gasto total"""
     query = """
     SELECT 
         c.codigo_cliente,
@@ -114,7 +103,6 @@ def query_4_clientes_frecuentes(conn):
     ejecutar_query(conn, query, "QUERY 4: Top 15 Clientes Frecuentes")
 
 def query_5_ocupacion_mesas(conn):
-    """Análisis de ocupación de mesas"""
     query = """
     SELECT 
         m.codigo_mesa,
@@ -134,7 +122,6 @@ def query_5_ocupacion_mesas(conn):
     ejecutar_query(conn, query, "QUERY 5: Análisis de Ocupación de Mesas")
 
 def query_6_analisis_turnos(conn):
-    """Análisis de turnos: reservas y pedidos por turno"""
     query = """
     SELECT 
         t.codigo_turno,
@@ -155,7 +142,6 @@ def query_6_analisis_turnos(conn):
     ejecutar_query(conn, query, "QUERY 6: Análisis de Turnos")
 
 def query_7_metodos_pago_distribucion(conn):
-    """Distribución de métodos de pago y montos"""
     query = """
     SELECT 
         metodo,
@@ -172,7 +158,6 @@ def query_7_metodos_pago_distribucion(conn):
     ejecutar_query(conn, query, "QUERY 7: Distribución de Métodos de Pago")
 
 def query_8_estados_pedidos(conn):
-    """Distribución de pedidos por estado"""
     query = """
     SELECT 
         estado,
@@ -187,7 +172,6 @@ def query_8_estados_pedidos(conn):
     ejecutar_query(conn, query, "QUERY 8: Distribución de Estados de Pedidos")
 
 def query_9_reservas_por_estado(conn):
-    """Distribución de reservas por estado"""
     query = """
     SELECT 
         estado,
@@ -203,7 +187,6 @@ def query_9_reservas_por_estado(conn):
     ejecutar_query(conn, query, "QUERY 9: Distribución de Reservas por Estado")
 
 def query_10_jerarquia_meseros(conn):
-    """Estructura jerárquica de meseros con su desempeño"""
     query = """
     SELECT 
         m.codigo_mesero,
@@ -221,10 +204,7 @@ def query_10_jerarquia_meseros(conn):
     """
     ejecutar_query(conn, query, "QUERY 10: Jerarquía de Meseros y Desempeño")
 
-# ========== QUERIES 11-20: ANÁLISIS CON WHERE ==========
-
 def query_11_platos_precio_alto(conn):
-    """Platos con precio mayor a $30"""
     query = """
     SELECT 
         p.codigo_plato,
@@ -244,7 +224,6 @@ def query_11_platos_precio_alto(conn):
     ejecutar_query(conn, query, "QUERY 11: Platos con Precio > $30 (WHERE)")
 
 def query_12_reservas_confirmadas(conn):
-    """Reservas confirmadas únicamente"""
     query = """
     SELECT 
         r.codigo_reserva,
@@ -265,7 +244,6 @@ def query_12_reservas_confirmadas(conn):
     ejecutar_query(conn, query, "QUERY 12: Reservas Confirmadas (WHERE estado)")
 
 def query_13_pagos_efectivo(conn):
-    """Pagos realizados en efectivo"""
     query = """
     SELECT 
         pa.codigo_pago,
@@ -284,7 +262,6 @@ def query_13_pagos_efectivo(conn):
     ejecutar_query(conn, query, "QUERY 13: Pagos en Efectivo (WHERE metodo)")
 
 def query_14_mesas_capacidad_4(conn):
-    """Mesas con capacidad de 4 personas"""
     query = """
     SELECT 
         m.codigo_mesa,
@@ -303,7 +280,6 @@ def query_14_mesas_capacidad_4(conn):
     ejecutar_query(conn, query, "QUERY 14: Mesas de Capacidad 4 (WHERE)")
 
 def query_15_meseros_sin_jefe(conn):
-    """Meseros que son jefes (sin supervisor)"""
     query = """
     SELECT 
         m.codigo_mesero,
@@ -323,7 +299,6 @@ def query_15_meseros_sin_jefe(conn):
     ejecutar_query(conn, query, "QUERY 15: Meseros Jefes (WHERE id_jefe IS NULL)")
 
 def query_16_pedidos_pagados(conn):
-    """Pedidos con estado 'pagado'"""
     query = """
     SELECT 
         p.codigo_pedido,
@@ -342,7 +317,6 @@ def query_16_pedidos_pagados(conn):
     ejecutar_query(conn, query, "QUERY 16: Pedidos Pagados (WHERE estado)")
 
 def query_17_categorias_especificas(conn):
-    """Platos de categorías específicas (Entradas, Sopas, Ensaladas)"""
     query = """
     SELECT 
         p.codigo_plato,
@@ -358,7 +332,6 @@ def query_17_categorias_especificas(conn):
     ejecutar_query(conn, query, "QUERY 17: Platos de Entradas, Sopas y Ensaladas (WHERE IN)")
 
 def query_18_clientes_con_email(conn):
-    """Clientes que tienen correo electrónico"""
     query = """
     SELECT 
         c.codigo_cliente,
@@ -375,7 +348,6 @@ def query_18_clientes_con_email(conn):
     ejecutar_query(conn, query, "QUERY 18: Clientes con Email (WHERE IS NOT NULL)")
 
 def query_19_turnos_noche(conn):
-    """Turnos nocturnos (después de las 18:00)"""
     query = """
     SELECT 
         t.codigo_turno,
@@ -394,7 +366,6 @@ def query_19_turnos_noche(conn):
     ejecutar_query(conn, query, "QUERY 19: Turnos Nocturnos (WHERE HOUR >= 18)")
 
 def query_20_platos_preparacion_rapida(conn):
-    """Platos con tiempo de preparación menor a 15 minutos"""
     query = """
     SELECT 
         p.codigo_plato,
@@ -412,10 +383,7 @@ def query_20_platos_preparacion_rapida(conn):
     """
     ejecutar_query(conn, query, "QUERY 20: Platos de Preparación Rápida (WHERE tiempo < 15)")
 
-# ========== QUERIES 21-30: ANÁLISIS AVANZADOS ==========
-
 def query_21_ingresos_por_fecha(conn):
-    """Ingresos totales agrupados por fecha"""
     query = """
     SELECT 
         pa.fecha_pago,
@@ -431,7 +399,6 @@ def query_21_ingresos_por_fecha(conn):
     ejecutar_query(conn, query, "QUERY 21: Ingresos por Fecha")
 
 def query_22_mesas_por_ubicacion(conn):
-    """Análisis de mesas agrupadas por ubicación"""
     query = """
     SELECT 
         m.ubicacion,
@@ -448,7 +415,6 @@ def query_22_mesas_por_ubicacion(conn):
     ejecutar_query(conn, query, "QUERY 22: Análisis de Mesas por Ubicación")
 
 def query_23_detalle_pedidos_completo(conn):
-    """Detalle completo de pedidos con platos"""
     query = """
     SELECT 
         p.codigo_pedido,
@@ -469,7 +435,6 @@ def query_23_detalle_pedidos_completo(conn):
     ejecutar_query(conn, query, "QUERY 23: Detalle Completo de Pedidos")
 
 def query_24_meseros_por_rol(conn):
-    """Meseros agrupados por rol en pedidos"""
     query = """
     SELECT 
         mp.rol,
@@ -485,7 +450,6 @@ def query_24_meseros_por_rol(conn):
     ejecutar_query(conn, query, "QUERY 24: Meseros por Rol en Pedidos")
 
 def query_25_reservas_multiples_clientes(conn):
-    """Clientes con más de 1 reserva"""
     query = """
     SELECT 
         c.codigo_cliente,
@@ -505,7 +469,6 @@ def query_25_reservas_multiples_clientes(conn):
     ejecutar_query(conn, query, "QUERY 25: Clientes con Múltiples Reservas (HAVING)")
 
 def query_26_pedidos_alto_valor(conn):
-    """Pedidos con valor total mayor a $200"""
     query = """
     SELECT 
         p.codigo_pedido,
@@ -526,7 +489,6 @@ def query_26_pedidos_alto_valor(conn):
     ejecutar_query(conn, query, "QUERY 26: Pedidos de Alto Valor (> $200)")
 
 def query_27_platos_no_vendidos(conn):
-    """Platos que no han sido vendidos"""
     query = """
     SELECT 
         p.codigo_plato,
@@ -544,7 +506,6 @@ def query_27_platos_no_vendidos(conn):
     ejecutar_query(conn, query, "QUERY 27: Platos No Vendidos (LEFT JOIN con NULL)")
 
 def query_28_analisis_capacidad_vs_personas(conn):
-    """Comparación entre capacidad de mesa y número de personas en reserva"""
     query = """
     SELECT 
         m.codigo_mesa,
@@ -564,7 +525,6 @@ def query_28_analisis_capacidad_vs_personas(conn):
     ejecutar_query(conn, query, "QUERY 28: Análisis de Uso de Capacidad de Mesas")
 
 def query_29_pagos_por_metodo_fecha(conn):
-    """Pagos agrupados por método y fecha"""
     query = """
     SELECT 
         pa.fecha_pago,
@@ -579,7 +539,6 @@ def query_29_pagos_por_metodo_fecha(conn):
     ejecutar_query(conn, query, "QUERY 29: Pagos por Método y Fecha")
 
 def query_30_resumen_completo_restaurante(conn):
-    """Resumen general del restaurante"""
     query = """
     SELECT 
         'Total Clientes' as metrica, COUNT(DISTINCT id_cliente) as valor FROM Cliente
@@ -604,9 +563,7 @@ def query_30_resumen_completo_restaurante(conn):
     """
     ejecutar_query(conn, query, "QUERY 30: Resumen General del Restaurante")
 
-
 def query_31_mesas_disponibles_por_turno(conn):
-    """Mesas disponibles por turno (no reservadas)"""
     query = """
     SELECT 
         t.codigo_turno,
@@ -632,7 +589,6 @@ def query_31_mesas_disponibles_por_turno(conn):
     ejecutar_query(conn, query, "QUERY 31: Mesas Disponibles por Turno")
 
 def query_32_mesas_libres_turno_especifico(conn):
-    """Mesas disponibles para un turno específico (ejemplo: próximos turnos)"""
     query = """
     SELECT 
         t.codigo_turno,
@@ -661,20 +617,15 @@ def query_32_mesas_libres_turno_especifico(conn):
     ORDER BY t.fecha, t.hora_inicio;
     """
     ejecutar_query(conn, query, "QUERY 32: Resumen de Disponibilidad por Turno")
-# ========== FUNCIÓN PRINCIPAL ==========
 
 def ejecutar_todas_las_queries():
-    """Ejecuta todas las 30 queries del sistema"""
     conn = conectar_bd()
     if conn is None:
         print(" No se pudo conectar a la base de datos")
         return
-    
     print("\n" + "="*50)
     print(" EJECUTANDO 30 QUERIES - SISTEMA DE GESTIÓN DE RESTAURANTE")
     print("="*50)
-    
-    # QUERIES 1-10: Análisis General
     query_1_top_platos_vendidos(conn)
     query_2_ingresos_por_categoria(conn)
     query_3_meseros_top_desempenio(conn)
@@ -685,8 +636,6 @@ def ejecutar_todas_las_queries():
     query_8_estados_pedidos(conn)
     query_9_reservas_por_estado(conn)
     query_10_jerarquia_meseros(conn)
-    
-    # QUERIES 11-20: Análisis con WHERE
     query_11_platos_precio_alto(conn)
     query_12_reservas_confirmadas(conn)
     query_13_pagos_efectivo(conn)
@@ -697,8 +646,6 @@ def ejecutar_todas_las_queries():
     query_18_clientes_con_email(conn)
     query_19_turnos_noche(conn)
     query_20_platos_preparacion_rapida(conn)
-    
-    # QUERIES 21-30: Análisis Avanzados
     query_21_ingresos_por_fecha(conn)
     query_22_mesas_por_ubicacion(conn)
     query_23_detalle_pedidos_completo(conn)
@@ -709,17 +656,12 @@ def ejecutar_todas_las_queries():
     query_28_analisis_capacidad_vs_personas(conn)
     query_29_pagos_por_metodo_fecha(conn)
     query_30_resumen_completo_restaurante(conn)
-    
-    # QUERIES 31-32: Disponibilidad de Mesas
     query_31_mesas_disponibles_por_turno(conn)
     query_32_mesas_libres_turno_especifico(conn)
-    
     conn.close()
-    
     print("\n" + "="*50)
     print(" ¡TODAS LAS 30 QUERIES EJECUTADAS EXITOSAMENTE!")
     print("="*50 + "\n")
-
 
 if __name__ == "__main__":
     ejecutar_todas_las_queries()
